@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 - 주문 확인</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-new { background-color: #ffc107; color: #000; }
+        .status-processing { background-color: #17a2b8; color: white; }
+        .status-completed { background-color: #28a745; color: white; }
+        .status-cancelled { background-color: #dc3545; color: white; }
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 2px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: #000; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn:hover { opacity: 0.8; }
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 주문 관리 시스템</h1>
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <a href="/admin/prices" class="btn btn-primary">💰 가격 관리</a>
+            <button onclick="syncToSheet()" class="btn btn-success">📊 구글시트 동기화</button>
+        </div>
+        
+        <div style="text-align: right; margin-bottom: 10px;">
+            <label for="month-filter" style="font-weight:bold;">월별 보기:</label>
+            <select id="month-filter" onchange="filterByMonth()" style="padding:6px 12px; border-radius:6px; border:1px solid #ccc;">
+                <option value="all">전체</option>
+                {% for yyyymm in months %}
+                    {% set year = yyyymm[:4] %}
+                    {% set month = yyyymm[5:7]|int %}
+                    <option value="{{ yyyymm }}">{{ year }}년 {{ month }}월</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number">{{ orders|length }}</div>
+                <div class="stat-label">전체 주문</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ orders|selectattr('status', 'equalto', '신규주문')|list|length }}</div>
+                <div class="stat-label">신규 주문</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ orders|selectattr('status', 'equalto', '처리중')|list|length }}</div>
+                <div class="stat-label">처리 중</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ orders|selectattr('status', 'equalto', '완료')|list|length }}</div>
+                <div class="stat-label">완료</div>
+            </div>
+        </div>
+
+        {% if orders %}
+        <table id="orders-table">
+            <thead>
+                <tr>
+                    <th>주문번호</th>
+                    <th>주문일시</th>
+                    <th>고객명</th>
+                    <th>자동차 코드</th>
+                    <th>수량</th>
+                    <th>총 금액</th>
+                    <th>결제 상태</th>
+                    <th>수령인</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders|sort(attribute='created_at', reverse=true) %}
+                <tr>
+                    <td>#{{ order.id }}</td>
+                    <td>{{ order.created_at }}</td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.code }}</td>
+                    <td>{{ order.quantity }}</td>
+                    <td>
+                        {% if order.total_price %}
+                            {{ "{:,}".format(order.total_price) }}원
+                        {% else %}
+                            계산 중
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if order.payment_status %}
+                            <span class="status status-{{ order.payment_status|lower|replace(' ', '') }}">
+                                {{ order.payment_status }}
+                            </span>
+                        {% else %}
+                            <span class="status status-미결제">미결제</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ order.receiver }}</td>
+                    <td>
+                        <span class="status status-{{ order.status|lower|replace(' ', '') }}">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="/admin/order/{{ order.id }}" class="btn btn-primary">상세보기</a>
+                        <button onclick="updateStatus({{ order.id }}, '처리중')" class="btn btn-warning">처리중</button>
+                        <button onclick="updateStatus({{ order.id }}, '완료')" class="btn btn-success">완료</button>
+                        <button onclick="updateStatus({{ order.id }}, '취소')" class="btn btn-danger">취소</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <h3>📭 아직 주문이 없습니다</h3>
+            <p>고객이 주문을 하면 여기에 표시됩니다.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function updateStatus(orderId, status) {
+            if (!confirm(`주문 #${orderId}의 상태를 "${status}"로 변경하시겠습니까?`)) {
+                return;
+            }
+            
+            fetch(`/admin/order/${orderId}/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('상태가 업데이트되었습니다.');
+                    location.reload();
+                } else {
+                    alert('상태 업데이트에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('오류가 발생했습니다.');
+            });
+        }
+
+        function filterByMonth() {
+            const monthFilter = document.getElementById('month-filter').value;
+            const ordersTable = document.getElementById('orders-table');
+            const rows = ordersTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            let filteredRows = Array.from(rows);
+
+            if (monthFilter === 'all') {
+                filteredRows = Array.from(rows);
+            } else {
+                filteredRows = Array.from(rows).filter(row => {
+                    const createdAt = row.getElementsByTagName('td')[1].textContent;
+                    return createdAt.slice(0, 7) === monthFilter;
+                });
+            }
+
+            const newTableBody = document.createElement('tbody');
+            filteredRows.forEach(row => {
+                newTableBody.appendChild(row.parentNode.removeChild(row));
+            });
+
+            ordersTable.getElementsByTagName('tbody')[0].parentNode.replaceChild(newTableBody, ordersTable.getElementsByTagName('tbody')[0]);
+        }
+
+        function syncToSheet() {
+            if (!confirm('구글 시트(시트11)에 주문 데이터를 동기화하시겠습니까?')) {
+                return;
+            }
+            
+            // 버튼 비활성화
+            const syncButton = event.target;
+            const originalText = syncButton.textContent;
+            syncButton.textContent = '동기화 중...';
+            syncButton.disabled = true;
+            
+            fetch('/admin/sync-sheet', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('구글 시트 동기화가 완료되었습니다!');
+                } else {
+                    alert('동기화 실패: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('동기화 중 오류가 발생했습니다.');
+            })
+            .finally(() => {
+                // 버튼 복원
+                syncButton.textContent = originalText;
+                syncButton.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>자동차 코드 주문 시스템</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}" />
+  <style>
+    .center-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 90vh;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .price-display {
+      background: #e8f5e8;
+      border: 1px solid #28a745;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      text-align: center;
+    }
+
+    .price-amount {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #28a745;
+    }
+
+    .payment-methods {
+      margin: 20px 0;
+    }
+
+    .payment-method {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .payment-method:hover {
+      background-color: #f8f9fa;
+    }
+
+    .payment-method input[type="radio"] {
+      margin-right: 10px;
+    }
+
+    .payment-info {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      background-color: white;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    .modal .close-btn {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .modal .close-btn:hover,
+    .modal .close-btn:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .selected-product-item {
+      border: 1px solid #eee;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #f9f9f9;
+    }
+
+    .selected-product-item .remove-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .selected-product-item .remove-btn:hover {
+      background-color: #c82333;
+    }
+  </style>
+</head>
+
+<body>
+  <!--✅ 로그인 UI -->
+  <div class="container" id="login-screen">
+    <div class="card">
+      <h2>로그인</h2>
+      <form onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <input type="text" id="name" placeholder="이름을 입력하세요" required />
+        </div>
+        <div class="form-group">
+          <input type="text" id="phone" placeholder="전화번호를 입력하세요" required />
+        </div>
+        <div class="form-group">
+          <input type="password" id="password" placeholder="비밀번호를 입력하세요" required />
+        </div>
+        <button type="submit">로그인</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ✅ '자동차 도장 제품 주문서' UI -->
+  <div class="center-box hidden" id="order-step1">
+    <div class="card main-form">
+      <h2>자동차 도장 제품 주문서</h2>
+      <form id="car-order-form" onsubmit="showAddressForm(event)">
+        <div id="selected-products-container">
+          <!-- 선택된 제품들과 요청사항이 여기에 표시됩니다 -->
+        </div>
+        <button type="button" id="open-product-modal-btn" style="
+              width: 100%;
+              padding: 10px;
+              margin-bottom: 15px;
+              background-color: #007bff;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+            ">
+          제품 추가
+        </button>
+
+        <div class="price-display" id="price-display" style="display: none">
+          <div>예상 총 금액</div>
+          <div class="price-amount" id="total-price">0원</div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 8px">
+          <button type="button" onclick="goBackToLogin()">뒤로가기</button>
+          <button type="submit">다음</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ✅ '제품 선택' UI -->
+  <div id="product-modal" class="modal hidden">
+    <div class="modal-content card main-form">
+      <h2>제품 선택</h2>
+      <!-- 공지 박스 추가 -->
+      <div
+        style="background:#f8f9fa; border-left:4px solid #1976d2; padding:12px 16px; margin-bottom:24px; font-size:1.05em; color:#222;">
+        <strong>공지</strong><br>
+        정기주문 리스트에 없는 제품이 있을 경우 요청사항 란에 적어주세요.
+      </div>
+      <!-- 정기주문 품목 -->
+      <div class="order-section">
+        <h3>정기주문 품목</h3>
+        <div class="form-group">
+          <label for="regular-item-select" class="form-label">품목 선택</label>
+          <select id="regular-item-select" class="form-input">
+            <option value="">품목을 선택하세요</option>
+            <option value="투명">투명</option>
+            <option value="서페">서페</option>
+            <option value="서페 흰색">서페 흰색</option>
+            <option value="서페 블랙">서페 블랙</option>
+            <option value="블랜딩">블랜딩</option>
+            <option value="공캔">공캔</option>
+            <option value="헤드라이트복원제">헤드라이트복원제</option>
+            <option value="PP프라이머">PP프라이머</option>
+            <option value="금속프라이머">금속프라이머</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="regular-qty" class="form-label">수량 입력</label>
+          <input id="regular-qty" type="number" min="1" value="1" class="form-input" />
+        </div>
+        <button type="button" class="btn btn-primary order-btn" onclick="addRegularToCart()">정기주문 장바구니 담기</button>
+      </div>
+      <!-- 색상 코드 품목 -->
+      <div class="order-section">
+        <h3>색상 코드 품목</h3>
+        <div class="form-group">
+          <label for="modal-color-autocomplete" class="form-label">코드 검색</label>
+          <div class="autocomplete-wrapper">
+            <input id="modal-color-autocomplete" name="color_search" type="text" placeholder="색상 코드 검색"
+              autocomplete="off" class="form-input" />
+            <ul id="modal-autocomplete-list" class="autocomplete-list" style="display:none;"></ul>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="color-qty" class="form-label">수량 입력</label>
+          <input id="color-qty" type="number" min="1" value="1" class="form-input" />
+        </div>
+        <button type="button" class="btn btn-primary order-btn" onclick="addColorToCart()">색상 코드 장바구니 담기</button>
+        <div id="modal-selected-color-info" class="selected-color-info" style="display:none;"></div>
+      </div>
+      <!-- 장바구니 영역 -->
+      <div id="modal-cart-list" style="margin-top: 24px; margin-bottom: 8px"></div>
+      <!-- 요청사항 입력란 추가 -->
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label for="modal-memo-input" style="display:block; margin-bottom:4px; font-weight:500;">요청사항</label>
+        <input type="text" id="modal-memo-input" placeholder="요청사항이 있으면 입력하세요"
+          style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+      </div>
+      <div class="modal-buttons" style="display: flex; justify-content: space-between; gap: 8px; margin-top: 20px;">
+        <button type="button" onclick="closeProductModal()">선택 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ '배송주소' UI -->
+  <div class="center-box hidden" id="order-step2">
+    <div class="card main-form">
+      <h2>배송 주소</h2>
+      <form id="address-form" onsubmit="submitOrder(event)">
+        <input id="receiver" type="text" placeholder="수령인" readonly />
+        <input id="contact" type="text" placeholder="연락처" readonly />
+        <input id="address" type="text" placeholder="주소 (도로명, 상세주소)" required />
+        <select id="delivery-method" required>
+          <option value="">배송 방법을 선택하세요</option>
+          <option value="택배">택배</option>
+          <option value="화물">화물</option>
+          <option value="퀵">퀵</option>
+          <option value="방문수령">방문수령</option>
+        </select>
+
+        <div class="payment-methods">
+          <h3>결제 방법 선택</h3>
+          <div class="payment-method">
+            <input type="radio" name="payment" value="bank_transfer" id="bank_transfer" required checked />
+            <label for="bank_transfer">계좌이체</label>
+          </div>
+        </div>
+
+        <div class="form-group payment-info" id="payment-info-box" style="display: block">
+          <div style="font-size: 1.1em; margin-bottom: 6px">💰 결제 안내</div>
+          <div style="margin-bottom: 6px">
+            주문이 접수 되었습니다, 확인 후 주문내역서를 보내 드리고 순차적으로 발송하겠습니다.
+          </div>
+          <div style="font-size: 1.1em; color: #28a745; font-weight: bold">
+            총 결제 예상 금액: <span id="final-price">0원</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 8px">
+          <button type="button" onclick="goBackToOrder()">뒤로가기</button>
+          <button type="submit">주문 제출</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>

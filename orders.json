@@ -1,0 +1,80 @@
+[
+  {
+    "id": 1,
+    "customer_name": "엄아령",
+    "customer_phone": "01059381848",
+    "products": [
+      {
+        "type": "정기주문",
+        "name": "투명",
+        "quantity": 1,
+        "total_price": 16000
+      },
+      {
+        "type": "정기주문",
+        "name": "서페 블랙",
+        "quantity": 1,
+        "total_price": 14000
+      },
+      {
+        "type": "색상코드",
+        "name": "[국산] 070 바탕 ()",
+        "color": {
+          "car_model": "",
+          "code": "070",
+          "id": 79,
+          "model": "BC",
+          "name": "",
+          "per": "O",
+          "product_name": "(배합) BC-070 바탕 프리우스",
+          "remarks_actual_code": "070",
+          "standard": "0.5LT",
+          "type": "바탕",
+          "display": "[국산] 070 바탕 ()",
+          "img": null,
+          "priceType": "카페인트 수입",
+          "price": null
+        },
+        "quantity": 5,
+        "total_price": 115000
+      },
+      {
+        "type": "요청사항",
+        "memo": "000"
+      }
+    ],
+    "overall_total_price": 145000,
+    "receiver": "엄아령",
+    "contact": "01059381848",
+    "address": "ㅇㅇ",
+    "payment_method": "bank_transfer",
+    "delivery_method": "택배",
+    "payment_status": "미결제",
+    "status": "신규주문",
+    "created_at": "2025-07-09 15:51:34",
+    "updated_at": "2025-07-09 15:51:34"
+  },
+  {
+    "id": 1,
+    "customer_name": "엄아령",
+    "customer_phone": "01059381848",
+    "products": [
+      {
+        "type": "정기주문",
+        "name": "투명",
+        "quantity": 1,
+        "total_price": 16000
+      }
+    ],
+    "overall_total_price": 16000,
+    "receiver": "엄아령",
+    "contact": "01059381848",
+    "address": "rfw",
+    "payment_method": "bank_transfer",
+    "delivery_method": "택배",
+    "payment_status": "미결제",
+    "status": "신규주문",
+    "created_at": "2025-07-11 17:38:19",
+    "updated_at": "2025-07-11 17:38:19"
+  }
+]

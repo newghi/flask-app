@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가격 관리</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-warning { background-color: #ffc107; color: #000; }
+        .btn:hover { opacity: 0.8; }
+        .price-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .price-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        .price-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .code {
+            font-weight: bold;
+            color: #007bff;
+            font-size: 1.1em;
+        }
+        .price {
+            font-size: 1.1em;
+            color: #28a745;
+            font-weight: bold;
+        }
+        .info-section {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .info-section h3 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 가격 정보 (구글 시트 기준)</h1>
+            <a href="/admin" class="btn btn-primary">← 관리자 메인</a>
+        </div>
+
+        <div class="info-section">
+            <h3>📋 현재 적용된 가격 정보</h3>
+            <p>이 가격 정보는 구글 시트의 데이터를 기반으로 자동으로 설정됩니다.</p>
+            <p>고객이 제품을 선택하면 자동으로 해당 가격이 적용됩니다.</p>
+        </div>
+
+        <div class="price-list">
+            <h3>제품별 가격 목록 (총 {{ prices|length }}개)</h3>
+            {% if prices %}
+                <div class="price-grid">
+                    {% for code, price in prices.items() %}
+                    <div class="price-item">
+                        <div class="price-info">
+                            <span class="code">{{ code }}</span>
+                            <span class="price">{{ "{:,}".format(price) }}원</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <h3>📝 가격 정보가 없습니다</h3>
+                    <p>구글 시트에서 가격 정보를 가져올 수 없습니다.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html> 
